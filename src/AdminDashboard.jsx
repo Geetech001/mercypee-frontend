@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import ImageLightbox from "./ImageLightbox";
-import ImageCropper from "./ImageCropper";
 
 function EyeIcon({ open }) {
   return open ? (
@@ -24,8 +23,6 @@ function AdminDashboard() {
   const [category, setCategory] = useState("");
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
-  const [rawImageUrl, setRawImageUrl] = useState(null);
-  const [showCropper, setShowCropper] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("idle");
   const fileInputRef = useRef(null);
 
@@ -91,21 +88,8 @@ function AdminDashboard() {
   const handleFileSelect = (e) => {
     const selected = e.target.files[0];
     if (!selected) return;
-    const url = URL.createObjectURL(selected);
-    setRawImageUrl(url);
-    openOverlay(() => setShowCropper(false));
-    setShowCropper(true);
-  };
-
-  const handleCropConfirm = (croppedFile) => {
-    setFile(croppedFile);
-    setPreviewUrl(URL.createObjectURL(croppedFile));
-    closeTopOverlay();
-  };
-
-  const handleCropCancel = () => {
-    closeTopOverlay();
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    setFile(selected);
+    setPreviewUrl(URL.createObjectURL(selected));
   };
 
   const handleRemoveSelected = () => {
@@ -255,16 +239,10 @@ function AdminDashboard() {
                 style={{ display: "block", marginBottom: "10px" }} />
             ) : (
               <div style={{ marginBottom: "15px" }}>
-                <img
-                  src={previewUrl}
-                  alt="Preview"
-                  onClick={() => { setRawImageUrl(previewUrl); openOverlay(() => setShowCropper(false)); setShowCropper(true); }}
-                  style={{
-                    width: "100%", maxHeight: "280px", objectFit: "contain",
-                    borderRadius: "8px", backgroundColor: colors.section, display: "block", marginBottom: "8px", cursor: "pointer"
-                  }}
-                />
-                <p style={{ fontSize: "0.75rem", color: colors.text, marginBottom: "8px" }}>Tap the photo to re-crop it</p>
+                <img src={previewUrl} alt="Preview" style={{
+                  width: "100%", maxHeight: "280px", objectFit: "contain",
+                  borderRadius: "8px", backgroundColor: colors.section, display: "block", marginBottom: "8px"
+                }} />
                 <button type="button" onClick={handleRemoveSelected} style={{
                   background: "none", border: `1px solid ${colors.accent}`, color: colors.accent,
                   padding: "6px 14px", borderRadius: "6px", cursor: "pointer", fontSize: "0.85rem"
@@ -426,14 +404,6 @@ function AdminDashboard() {
 
       {lightboxImage && (
         <ImageLightbox src={lightboxImage.imageUrl} onRequestClose={closeTopOverlay} />
-      )}
-
-      {showCropper && rawImageUrl && (
-        <ImageCropper
-          imageUrl={rawImageUrl}
-          onConfirm={handleCropConfirm}
-          onCancel={handleCropCancel}
-        />
       )}
     </div>
   );
