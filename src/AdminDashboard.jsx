@@ -22,7 +22,9 @@ function AdminDashboard() {
   const [caption, setCaption] = useState("");
   const [category, setCategory] = useState("");
   const [file, setFile] = useState(null);
+  const [previewUrl, setPreviewUrl] = useState(null);
   const [uploadStatus, setUploadStatus] = useState("idle");
+  const fileInputRef = useRef(null);
 
   const [currentPassword, setCurrentPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -83,6 +85,19 @@ function AdminDashboard() {
 
   useEffect(() => { fetchPosts(); fetchProfile(); }, []);
 
+  const handleFileSelect = (e) => {
+    const selected = e.target.files[0];
+    if (!selected) return;
+    setFile(selected);
+    setPreviewUrl(URL.createObjectURL(selected));
+  };
+
+  const handleRemoveSelected = () => {
+    setFile(null);
+    setPreviewUrl(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
   const handleUpload = async (e) => {
     e.preventDefault();
     if (!file) return;
@@ -96,7 +111,8 @@ function AdminDashboard() {
         headers: { Authorization: `Bearer ${token}` }
       });
       setUploadStatus("success");
-      setCaption(""); setCategory(""); setFile(null);
+      setCaption(""); setCategory("");
+      handleRemoveSelected();
       fetchPosts();
     } catch (err) {
       setUploadStatus("fail");
@@ -218,15 +234,31 @@ function AdminDashboard() {
       {tab === "posts" && (
         <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
           <form onSubmit={handleUpload} style={{ marginBottom: "40px" }}>
-            <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files[0])} required
-              style={{ display: "block", marginBottom: "10px" }} />
+            {!previewUrl ? (
+              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} required
+                style={{ display: "block", marginBottom: "10px" }} />
+            ) : (
+              <div style={{ marginBottom: "15px" }}>
+                <img src={previewUrl} alt="Preview" style={{
+                  width: "100%", maxHeight: "280px", objectFit: "contain",
+                  borderRadius: "8px", backgroundColor: colors.section, display: "block", marginBottom: "8px"
+                }} />
+                <button type="button" onClick={handleRemoveSelected} style={{
+                  background: "none", border: `1px solid ${colors.accent}`, color: colors.accent,
+                  padding: "6px 14px", borderRadius: "6px", cursor: "pointer", fontSize: "0.85rem"
+                }}>
+                  Remove & choose a different photo
+                </button>
+              </div>
+            )}
+
             <input type="text" placeholder="Caption" value={caption} onChange={(e) => setCaption(e.target.value)}
               style={{ width: "100%", boxSizing: "border-box", padding: "10px", marginBottom: "10px", borderRadius: "6px", border: `1px solid ${colors.accent}` }} />
             <input type="text" placeholder="Category (e.g. Bridal, Corsets)" value={category} onChange={(e) => setCategory(e.target.value)}
               style={{ width: "100%", boxSizing: "border-box", padding: "10px", marginBottom: "10px", borderRadius: "6px", border: `1px solid ${colors.accent}` }} />
-            <button type="submit" disabled={uploadStatus === "sending"} style={{
+            <button type="submit" disabled={uploadStatus === "sending" || !file} style={{
               width: "100%", padding: "12px", backgroundColor: colors.accent, color: "#fff",
-              border: "none", borderRadius: "8px", cursor: "pointer"
+              border: "none", borderRadius: "8px", cursor: "pointer", opacity: !file ? 0.6 : 1
             }}>
               {uploadStatus === "sending" ? "Uploading..." : "Post"}
             </button>
@@ -234,9 +266,12 @@ function AdminDashboard() {
             {uploadStatus === "fail" && <p style={{ color: "red" }}>Upload failed, try again.</p>}
           </form>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "15px", alignItems: "stretch" }}>
             {posts.map((post) => (
-              <div key={post._id} style={{ backgroundColor: colors.section, padding: "10px", borderRadius: "8px" }}>
+              <div key={post._id} style={{
+                backgroundColor: colors.section, padding: "10px", borderRadius: "8px",
+                display: "flex", flexDirection: "column"
+              }}>
                 <img
                   src={post.imageUrl}
                   alt={post.caption}
@@ -245,14 +280,14 @@ function AdminDashboard() {
                 />
 
                 {editingId === post._id ? (
-                  <div>
+                  <div style={{ marginTop: "8px", flex: 1, display: "flex", flexDirection: "column" }}>
                     <input type="text" value={editCaption} onChange={(e) => setEditCaption(e.target.value)}
                       placeholder="Caption"
-                      style={{ width: "100%", boxSizing: "border-box", padding: "6px", margin: "8px 0 6px", borderRadius: "6px", border: `1px solid ${colors.accent}`, fontSize: "0.85rem" }} />
+                      style={{ width: "100%", boxSizing: "border-box", padding: "6px", marginBottom: "6px", borderRadius: "6px", border: `1px solid ${colors.accent}`, fontSize: "0.85rem" }} />
                     <input type="text" value={editCategory} onChange={(e) => setEditCategory(e.target.value)}
                       placeholder="Category"
                       style={{ width: "100%", boxSizing: "border-box", padding: "6px", marginBottom: "8px", borderRadius: "6px", border: `1px solid ${colors.accent}`, fontSize: "0.85rem" }} />
-                    <div style={{ display: "flex", gap: "8px" }}>
+                    <div style={{ display: "flex", gap: "8px", marginTop: "auto" }}>
                       <button onClick={() => handleSaveEdit(post._id)} disabled={editStatus === "saving"} style={{
                         flex: 1, background: colors.accent, color: "#fff", border: "none", padding: "6px", borderRadius: "6px", cursor: "pointer", fontSize: "0.8rem"
                       }}>{editStatus === "saving" ? "Saving..." : "Save"}</button>
@@ -263,8 +298,8 @@ function AdminDashboard() {
                     {editStatus === "fail" && <p style={{ color: "red", fontSize: "0.75rem", marginTop: "4px" }}>Update failed, try again.</p>}
                   </div>
                 ) : (
-                  <>
-                    <p style={{ fontSize: "0.9rem", margin: "8px 0", color: colors.text }}>{post.caption}</p>
+                  <div style={{ marginTop: "8px", flex: 1, display: "flex", flexDirection: "column" }}>
+                    <p style={{ fontSize: "0.9rem", margin: "0 0 8px", color: colors.text, flex: 1 }}>{post.caption}</p>
 
                     {confirmDeleteId === post._id ? (
                       <div>
@@ -279,7 +314,7 @@ function AdminDashboard() {
                         </div>
                       </div>
                     ) : (
-                      <div style={{ display: "flex", gap: "8px" }}>
+                      <div style={{ display: "flex", gap: "8px", marginTop: "auto" }}>
                         <button onClick={() => startEditing(post)} style={{
                           flex: 1, background: "none", border: `1px solid ${colors.accent}`, color: colors.accent,
                           padding: "6px", borderRadius: "6px", cursor: "pointer", fontSize: "0.8rem"
@@ -290,7 +325,7 @@ function AdminDashboard() {
                         }}>Delete</button>
                       </div>
                     )}
-                  </>
+                  </div>
                 )}
               </div>
             ))}
