@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 
 function ImageCropper({ imageUrl, onConfirm, onCancel }) {
   const containerRef = useRef(null);
@@ -9,7 +9,7 @@ function ImageCropper({ imageUrl, onConfirm, onCancel }) {
   const dragStart = useRef(null);
   const pinchStart = useRef(null);
 
-  const colors = { text: "#3B2A1E", accent: "#B5651D" };
+  const colors = { accent: "#B5651D" };
 
   const getDistance = (touches) => {
     const dx = touches[0].clientX - touches[1].clientX;
@@ -54,7 +54,7 @@ function ImageCropper({ imageUrl, onConfirm, onCancel }) {
     const img = imgRef.current;
     if (!container || !img) return;
 
-    const boxSize = container.offsetWidth; // square crop box
+    const boxSize = container.offsetWidth;
     const canvas = document.createElement("canvas");
     canvas.width = 800;
     canvas.height = 800;
@@ -63,7 +63,6 @@ function ImageCropper({ imageUrl, onConfirm, onCancel }) {
     const naturalW = img.naturalWidth;
     const naturalH = img.naturalHeight;
 
-    // how the image is currently displayed inside the box (before scale/offset)
     const baseDisplayW = boxSize;
     const baseDisplayH = (naturalH / naturalW) * boxSize;
     const displayW = baseDisplayW * scale;
@@ -91,11 +90,11 @@ function ImageCropper({ imageUrl, onConfirm, onCancel }) {
   return (
     <div style={{
       position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
-      backgroundColor: "rgba(0,0,0,0.9)", zIndex: 2000,
+      backgroundColor: "rgba(0,0,0,0.92)", zIndex: 2000,
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "20px"
     }}>
       <p style={{ color: "#fff", marginBottom: "12px", fontSize: "0.9rem", textAlign: "center" }}>
-        Pinch to zoom, drag to reposition
+        Drag to move, pinch to zoom — the square is what gets used
       </p>
 
       <div
@@ -108,8 +107,7 @@ function ImageCropper({ imageUrl, onConfirm, onCancel }) {
           aspectRatio: "1 / 1",
           overflow: "hidden",
           position: "relative",
-          backgroundColor: "#000",
-          borderRadius: "10px",
+          backgroundColor: "#111",
           touchAction: "none"
         }}
       >
@@ -127,6 +125,33 @@ function ImageCropper({ imageUrl, onConfirm, onCancel }) {
             userSelect: "none"
           }}
         />
+
+        {/* crop frame overlay — visual only, doesn't block touch */}
+        <div style={{
+          position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+          border: "2px solid #fff", boxSizing: "border-box", pointerEvents: "none"
+        }}>
+          {/* rule-of-thirds grid lines */}
+          <div style={{ position: "absolute", top: "33.33%", left: 0, right: 0, height: "1px", background: "rgba(255,255,255,0.6)" }} />
+          <div style={{ position: "absolute", top: "66.66%", left: 0, right: 0, height: "1px", background: "rgba(255,255,255,0.6)" }} />
+          <div style={{ position: "absolute", left: "33.33%", top: 0, bottom: 0, width: "1px", background: "rgba(255,255,255,0.6)" }} />
+          <div style={{ position: "absolute", left: "66.66%", top: 0, bottom: 0, width: "1px", background: "rgba(255,255,255,0.6)" }} />
+
+          {/* corner marks */}
+          {[
+            { top: -2, left: -2 }, { top: -2, right: -2 },
+            { bottom: -2, left: -2 }, { bottom: -2, right: -2 }
+          ].map((pos, i) => (
+            <div key={i} style={{
+              position: "absolute", width: "18px", height: "18px",
+              borderTop: pos.top !== undefined ? `3px solid ${colors.accent}` : "none",
+              borderBottom: pos.bottom !== undefined ? `3px solid ${colors.accent}` : "none",
+              borderLeft: pos.left !== undefined ? `3px solid ${colors.accent}` : "none",
+              borderRight: pos.right !== undefined ? `3px solid ${colors.accent}` : "none",
+              ...pos
+            }} />
+          ))}
+        </div>
       </div>
 
       <div style={{ display: "flex", gap: "12px", marginTop: "20px", width: "min(85vw, 340px)" }}>
