@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 
-function ImageLightbox({ src, onRequestClose }) {
+function ImageLightbox({ post, onRequestClose }) {
   const [zoomed, setZoomed] = useState(false);
   const touchStartY = useRef(null);
+  const isVideo = post.mediaType === "video";
 
   useEffect(() => {
     document.body.style.overflow = "hidden";
@@ -37,17 +38,26 @@ function ImageLightbox({ src, onRequestClose }) {
         cursor: "pointer", zIndex: 1001
       }}>×</button>
 
-      <img
-        src={src}
-        alt="fashion look enlarged"
-        onClick={() => setZoomed(!zoomed)}
-        style={{
-          maxWidth: "95%", maxHeight: "90%", objectFit: "contain",
-          transform: zoomed ? "scale(2)" : "scale(1)",
-          transition: "transform 0.3s ease",
-          cursor: zoomed ? "zoom-out" : "zoom-in"
-        }}
-      />
+      {isVideo ? (
+        <video
+          src={post.videoUrl}
+          controls
+          autoPlay
+          style={{ maxWidth: "95%", maxHeight: "90%" }}
+        />
+      ) : (
+        <img
+          src={post.imageUrl}
+          alt="fashion look enlarged"
+          onClick={() => setZoomed(!zoomed)}
+          style={{
+            maxWidth: "95%", maxHeight: "90%", objectFit: "contain",
+            transform: zoomed ? "scale(2)" : "scale(1)",
+            transition: "transform 0.3s ease",
+            cursor: zoomed ? "zoom-out" : "zoom-in"
+          }}
+        />
+      )}
     </div>
   );
 }

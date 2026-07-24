@@ -23,6 +23,7 @@ function AdminDashboard() {
   const [category, setCategory] = useState("");
   const [file, setFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+  const [previewIsVideo, setPreviewIsVideo] = useState(false);
   const [uploadStatus, setUploadStatus] = useState("idle");
   const fileInputRef = useRef(null);
 
@@ -90,11 +91,13 @@ function AdminDashboard() {
     if (!selected) return;
     setFile(selected);
     setPreviewUrl(URL.createObjectURL(selected));
+    setPreviewIsVideo(selected.type.startsWith("video"));
   };
 
   const handleRemoveSelected = () => {
     setFile(null);
     setPreviewUrl(null);
+    setPreviewIsVideo(false);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -104,7 +107,7 @@ function AdminDashboard() {
     setUploadStatus("sending");
     try {
       const formData = new FormData();
-      formData.append("image", file);
+      formData.append("media", file);
       formData.append("caption", caption);
       formData.append("category", category);
       await axios.post(`${API}/api/posts`, formData, {
@@ -235,19 +238,35 @@ function AdminDashboard() {
         <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto" }}>
           <form onSubmit={handleUpload} style={{ marginBottom: "40px" }}>
             {!previewUrl ? (
-              <input ref={fileInputRef} type="file" accept="image/*" onChange={handleFileSelect} required
-                style={{ display: "block", marginBottom: "10px" }} />
+              <>
+                <input ref={fileInputRef} type="file" accept="image/*,video/*" onChange={handleFileSelect} required
+                  style={{ display: "block", marginBottom: "6px" }} />
+                <p style={{ fontSize: "0.75rem", color: colors.text, marginBottom: "10px" }}>
+                  You can post a photo or a video
+                </p>
+              </>
             ) : (
               <div style={{ marginBottom: "15px" }}>
-                <img src={previewUrl} alt="Preview" style={{
-                  width: "100%", maxHeight: "280px", objectFit: "contain",
-                  borderRadius: "8px", backgroundColor: colors.section, display: "block", marginBottom: "8px"
-                }} />
+                {previewIsVideo ? (
+                  <video
+                    src={previewUrl}
+                    controls
+                    style={{
+                      width: "100%", maxHeight: "280px", borderRadius: "8px",
+                      backgroundColor: "#000", display: "block", marginBottom: "8px"
+                    }}
+                  />
+                ) : (
+                  <img src={previewUrl} alt="Preview" style={{
+                    width: "100%", maxHeight: "280px", objectFit: "contain",
+                    borderRadius: "8px", backgroundColor: colors.section, display: "block", marginBottom: "8px"
+                  }} />
+                )}
                 <button type="button" onClick={handleRemoveSelected} style={{
                   background: "none", border: `1px solid ${colors.accent}`, color: colors.accent,
                   padding: "6px 14px", borderRadius: "6px", cursor: "pointer", fontSize: "0.85rem"
                 }}>
-                  Remove & choose a different photo
+                  Remove & choose a different {previewIsVideo ? "video" : "photo"}
                 </button>
               </div>
             )}
@@ -272,12 +291,21 @@ function AdminDashboard() {
                 backgroundColor: colors.section, padding: "10px", borderRadius: "8px",
                 display: "flex", flexDirection: "column"
               }}>
-                <img
-                  src={post.imageUrl}
-                  alt={post.caption}
-                  onClick={() => openLightbox(post)}
-                  style={{ width: "100%", height: "150px", objectFit: "cover", borderRadius: "6px", cursor: "pointer" }}
-                />
+                {post.mediaType === "video" ? (
+                  <video
+                    src={post.videoUrl}
+                    muted
+                    onClick={() => openLightbox(post)}
+                    style={{ width: "100%", height: "150px", objectFit: "cover", borderRadius: "6px", cursor: "pointer", backgroundColor: "#000" }}
+                  />
+                ) : (
+                  <img
+                    src={post.imageUrl}
+                    alt={post.caption}
+                    onClick={() => openLightbox(post)}
+                    style={{ width: "100%", height: "150px", objectFit: "cover", borderRadius: "6px", cursor: "pointer" }}
+                  />
+                )}
 
                 {editingId === post._id ? (
                   <div style={{ marginTop: "8px", flex: 1, display: "flex", flexDirection: "column" }}>
@@ -403,7 +431,7 @@ function AdminDashboard() {
       )}
 
       {lightboxImage && (
-        <ImageLightbox src={lightboxImage.imageUrl} onRequestClose={closeTopOverlay} />
+        <ImageLightbox post={lightboxImage} onRequestClose={closeTopOverlay} />
       )}
     </div>
   );

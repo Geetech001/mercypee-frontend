@@ -10,7 +10,7 @@ import ImageLightbox from "./ImageLightbox";
 function PublicSite() {
   const [posts, setPosts] = useState([]);
   const [profile, setProfile] = useState({ bio: "", photoUrl: "" });
-  const [lightboxSrc, setLightboxSrc] = useState(null);
+  const [lightboxPost, setLightboxPost] = useState(null);
   const [heroIndex, setHeroIndex] = useState(0);
 
   const specialties = [
@@ -19,12 +19,12 @@ function PublicSite() {
   ];
 
   const fallbackGallery = [
-    { imageUrl: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&h=800&fit=crop", caption: "", category: "" },
-    { imageUrl: "https://images.unsplash.com/photo-1445205170230-053b83016050?w=600&h=800&fit=crop", caption: "", category: "" },
-    { imageUrl: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=600&h=800&fit=crop", caption: "", category: "" },
-    { imageUrl: "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=600&h=800&fit=crop", caption: "", category: "" },
-    { imageUrl: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=600&h=800&fit=crop", caption: "", category: "" },
-    { imageUrl: "https://images.unsplash.com/photo-1490114538077-0a7f8cb49891?w=600&h=800&fit=crop", caption: "", category: "" }
+    { imageUrl: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&h=800&fit=crop", mediaType: "image", caption: "", category: "" },
+    { imageUrl: "https://images.unsplash.com/photo-1445205170230-053b83016050?w=600&h=800&fit=crop", mediaType: "image", caption: "", category: "" },
+    { imageUrl: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=600&h=800&fit=crop", mediaType: "image", caption: "", category: "" },
+    { imageUrl: "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=600&h=800&fit=crop", mediaType: "image", caption: "", category: "" },
+    { imageUrl: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=600&h=800&fit=crop", mediaType: "image", caption: "", category: "" },
+    { imageUrl: "https://images.unsplash.com/photo-1490114538077-0a7f8cb49891?w=600&h=800&fit=crop", mediaType: "image", caption: "", category: "" }
   ];
 
   const colors = {
@@ -43,50 +43,79 @@ function PublicSite() {
   }, [API]);
 
   useEffect(() => {
-    const handlePopState = () => setLightboxSrc(null);
+    const handlePopState = () => setLightboxPost(null);
     window.addEventListener("popstate", handlePopState);
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
   const galleryToShow = posts.length > 0 ? posts : fallbackGallery;
+  const currentHero = galleryToShow[heroIndex % galleryToShow.length];
+  const currentIsVideo = currentHero?.mediaType === "video";
 
-  // rotate the hero background through all available photos every 5 seconds
   useEffect(() => {
     if (galleryToShow.length <= 1) return;
-    const interval = setInterval(() => {
+    if (currentIsVideo) return;
+    const timer = setTimeout(() => {
       setHeroIndex((prev) => (prev + 1) % galleryToShow.length);
     }, 5000);
-    return () => clearInterval(interval);
-  }, [galleryToShow.length]);
+    return () => clearTimeout(timer);
+  }, [heroIndex, galleryToShow.length, currentIsVideo]);
 
-  const openLightbox = (src) => {
+  const handleHeroVideoEnded = () => {
+    setHeroIndex((prev) => (prev + 1) % galleryToShow.length);
+  };
+
+  const openLightbox = (post) => {
     window.history.pushState({ publicLightbox: true }, "");
-    setLightboxSrc(src);
+    setLightboxPost(post);
   };
 
   const closeLightbox = () => window.history.back();
 
-  const heroImage = galleryToShow[heroIndex % galleryToShow.length]?.imageUrl;
-
   return (
     <div style={{ fontFamily: "Georgia, serif", backgroundColor: colors.bg, color: colors.text, overflowX: "hidden" }}>
 
-      {/* HERO with rotating background image */}
       <section style={{
         minHeight: "100vh",
+        position: "relative",
         display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center", textAlign: "center", padding: "20px",
-        backgroundImage: `linear-gradient(rgba(42,29,20,0.55), rgba(42,29,20,0.55)), url(${heroImage})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        transition: "background-image 1s ease-in-out"
+        overflow: "hidden"
       }}>
-        <h1 style={{ fontSize: "2.8rem", marginBottom: "10px", color: "#fff", textShadow: "0 2px 8px rgba(0,0,0,0.4)" }}>Mercy Pee</h1>
-        <p style={{ fontSize: "1.15rem", color: "#F0C27B", letterSpacing: "3px" }}>HOME OF FASHION</p>
-        <p style={{ marginTop: "20px", fontStyle: "italic", color: "#f5ede1", fontSize: "1.05rem" }}>Designed to fit. Made to stand out.</p>
+        {currentIsVideo ? (
+          <video
+            key={currentHero.videoUrl}
+            src={currentHero.videoUrl}
+            autoPlay
+            muted
+            playsInline
+            onEnded={handleHeroVideoEnded}
+            style={{
+              position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
+              objectFit: "cover", zIndex: 0
+            }}
+          />
+        ) : (
+          <div style={{
+            position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
+            backgroundImage: `url(${currentHero?.imageUrl})`,
+            backgroundSize: "cover", backgroundPosition: "center",
+            zIndex: 0
+          }} />
+        )}
+
+        <div style={{
+          position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
+          backgroundColor: "rgba(42,29,20,0.55)", zIndex: 1
+        }} />
+
+        <div style={{ position: "relative", zIndex: 2 }}>
+          <h1 style={{ fontSize: "2.8rem", marginBottom: "10px", color: "#fff", textShadow: "0 2px 8px rgba(0,0,0,0.4)" }}>Mercy Pee</h1>
+          <p style={{ fontSize: "1.15rem", color: "#F0C27B", letterSpacing: "3px" }}>HOME OF FASHION</p>
+          <p style={{ marginTop: "20px", fontStyle: "italic", color: "#f5ede1", fontSize: "1.05rem" }}>Designed to fit. Made to stand out.</p>
+        </div>
       </section>
 
-      {/* ABOUT */}
       <section style={{ padding: "70px 20px", textAlign: "center", backgroundColor: colors.sectionBg }}>
         <h2 style={{ fontSize: "1.9rem", marginBottom: "25px", color: colors.text, letterSpacing: "1px" }}>Our Story</h2>
 
@@ -108,7 +137,6 @@ function PublicSite() {
         </p>
       </section>
 
-      {/* SPECIALTIES */}
       <section style={{ padding: "70px 20px" }}>
         <h2 style={{ fontSize: "1.9rem", textAlign: "center", marginBottom: "45px", color: colors.text, letterSpacing: "1px" }}>Our Specialties</h2>
         <div style={{
@@ -128,7 +156,6 @@ function PublicSite() {
         </div>
       </section>
 
-      {/* GALLERY */}
       <section style={{ padding: "70px 20px", backgroundColor: colors.sectionBg }}>
         <h2 style={{ fontSize: "1.9rem", textAlign: "center", marginBottom: "45px", color: colors.text, letterSpacing: "1px" }}>Lookbook</h2>
         <div style={{
@@ -140,14 +167,21 @@ function PublicSite() {
               backgroundColor: "#fff", borderRadius: "12px", overflow: "hidden",
               boxShadow: "0 4px 14px rgba(59,42,30,0.12)"
             }}>
-              <img
-                src={post.imageUrl}
-                alt={post.caption || "fashion look"}
-                onClick={() => openLightbox(post.imageUrl)}
-                style={{
-                  width: "100%", height: "300px", objectFit: "cover", cursor: "pointer", display: "block"
-                }}
-              />
+              {post.mediaType === "video" ? (
+                <video
+                  src={post.videoUrl}
+                  muted
+                  onClick={() => openLightbox(post)}
+                  style={{ width: "100%", height: "300px", objectFit: "cover", cursor: "pointer", display: "block", backgroundColor: "#000" }}
+                />
+              ) : (
+                <img
+                  src={post.imageUrl}
+                  alt={post.caption || "fashion look"}
+                  onClick={() => openLightbox(post)}
+                  style={{ width: "100%", height: "300px", objectFit: "cover", cursor: "pointer", display: "block" }}
+                />
+              )}
               {(post.caption || post.category) && (
                 <div style={{ padding: "14px" }}>
                   {post.caption && <p style={{ margin: 0, fontSize: "0.95rem", color: colors.text }}>{post.caption}</p>}
@@ -167,7 +201,6 @@ function PublicSite() {
         </div>
       </section>
 
-      {/* CONTACT */}
       <section style={{ padding: "70px 20px", textAlign: "center" }}>
         <h2 style={{ fontSize: "1.9rem", marginBottom: "35px", color: colors.text, letterSpacing: "1px" }}>Let's Bring Your Vision to Life</h2>
 
@@ -194,8 +227,8 @@ function PublicSite() {
         <p style={{ fontSize: "0.9rem", marginTop: "10px", opacity: 0.8 }}>Your Style, Your Confidence, Our Passion.</p>
       </footer>
 
-      {lightboxSrc && (
-        <ImageLightbox src={lightboxSrc} onRequestClose={closeLightbox} />
+      {lightboxPost && (
+        <ImageLightbox post={lightboxPost} onRequestClose={closeLightbox} />
       )}
 
     </div>
