@@ -165,15 +165,36 @@ function PublicSite() {
           {galleryToShow.map((post, i) => (
             <div key={i} style={{
               backgroundColor: "#fff", borderRadius: "12px", overflow: "hidden",
-              boxShadow: "0 4px 14px rgba(59,42,30,0.12)"
+              boxShadow: "0 4px 14px rgba(59,42,30,0.12)", position: "relative"
             }}>
               {post.mediaType === "video" ? (
-                <video
-                  src={post.videoUrl}
-                  muted
-                  onClick={() => openLightbox(post)}
-                  style={{ width: "100%", height: "300px", objectFit: "cover", cursor: "pointer", display: "block", backgroundColor: "#000" }}
-                />
+                <div style={{ position: "relative" }} onClick={() => openLightbox(post)}>
+                  <video
+                    src={post.videoUrl}
+                    muted
+                    preload="metadata"
+                    style={{ width: "100%", height: "300px", objectFit: "cover", cursor: "pointer", display: "block", backgroundColor: "#000" }}
+                  />
+                  <div style={{
+                    position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+                    display: "flex", alignItems: "center", justifyContent: "center",
+                    pointerEvents: "none"
+                  }}>
+                    <div style={{
+                      width: "56px", height: "56px", borderRadius: "50%",
+                      backgroundColor: "rgba(0,0,0,0.5)",
+                      display: "flex", alignItems: "center", justifyContent: "center"
+                    }}>
+                      <div style={{
+                        width: 0, height: 0,
+                        borderTop: "10px solid transparent",
+                        borderBottom: "10px solid transparent",
+                        borderLeft: "16px solid #fff",
+                        marginLeft: "4px"
+                      }} />
+                    </div>
+                  </div>
+                </div>
               ) : (
                 <img
                   src={post.imageUrl}
