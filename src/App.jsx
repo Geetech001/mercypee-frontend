@@ -75,7 +75,6 @@ function PublicSite() {
   return (
     <div style={{ fontFamily: "Georgia, serif", backgroundColor: colors.bg, color: colors.text, overflowX: "hidden" }}>
 
-      {/* HERO */}
       <section style={{
         minHeight: "100vh",
         position: "relative",
@@ -121,7 +120,6 @@ function PublicSite() {
         </div>
       </section>
 
-      {/* ABOUT */}
       <section style={{ padding: "70px 20px", textAlign: "center", backgroundColor: colors.sectionBg }}>
         <h2 style={{ fontSize: "1.9rem", marginBottom: "25px", color: colors.text, letterSpacing: "1px" }}>Our Story</h2>
 
@@ -143,7 +141,6 @@ function PublicSite() {
         </p>
       </section>
 
-      {/* SPECIALTIES */}
       <section style={{ padding: "70px 20px" }}>
         <h2 style={{ fontSize: "1.9rem", textAlign: "center", marginBottom: "45px", color: colors.text, letterSpacing: "1px" }}>Our Specialties</h2>
         <div style={{
@@ -163,7 +160,6 @@ function PublicSite() {
         </div>
       </section>
 
-      {/* GALLERY */}
       <section style={{ padding: "70px 20px", backgroundColor: colors.sectionBg }}>
         <h2 style={{ fontSize: "1.9rem", textAlign: "center", marginBottom: "45px", color: colors.text, letterSpacing: "1px" }}>Lookbook</h2>
 
@@ -240,7 +236,6 @@ function PublicSite() {
         )}
       </section>
 
-      {/* CONTACT */}
       <section style={{ padding: "70px 20px", textAlign: "center" }}>
         <h2 style={{ fontSize: "1.9rem", marginBottom: "35px", color: colors.text, letterSpacing: "1px" }}>Let's Bring Your Vision to Life</h2>
 
@@ -288,6 +283,16 @@ function AdminLoginWrapper() {
 }
 
 function App() {
+  useEffect(() => {
+    document.body.style.margin = "0";
+    document.body.style.padding = "0";
+    document.body.style.width = "100%";
+    document.body.style.overflowX = "hidden";
+    document.documentElement.style.margin = "0";
+    document.documentElement.style.padding = "0";
+    document.documentElement.style.width = "100%";
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
