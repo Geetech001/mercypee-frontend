@@ -2,6 +2,13 @@ import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import ImageLightbox from "./ImageLightbox";
 
+function getVideoPoster(videoUrl) {
+  if (!videoUrl) return undefined;
+  const lastDot = videoUrl.lastIndexOf(".");
+  if (lastDot === -1) return videoUrl;
+  return videoUrl.substring(0, lastDot) + ".jpg";
+}
+
 function EyeIcon({ open }) {
   return open ? (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -33,7 +40,7 @@ function AdminDashboard() {
   const [showCurrent, setShowCurrent] = useState(false);
   const [showNew, setShowNew] = useState(false);
 
-  const [lightboxImage, setLightboxImage] = useState(null);
+  const [lightboxPost, setLightboxPost] = useState(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [deleteStatus, setDeleteStatus] = useState("idle");
 
@@ -123,8 +130,8 @@ function AdminDashboard() {
   };
 
   const openLightbox = (post) => {
-    openOverlay(() => setLightboxImage(null));
-    setLightboxImage(post);
+    openOverlay(() => setLightboxPost(null));
+    setLightboxPost(post);
   };
 
   const startEditing = (post) => {
@@ -294,7 +301,9 @@ function AdminDashboard() {
                 {post.mediaType === "video" ? (
                   <video
                     src={post.videoUrl}
+                    poster={getVideoPoster(post.videoUrl)}
                     muted
+                    preload="metadata"
                     onClick={() => openLightbox(post)}
                     style={{ width: "100%", height: "150px", objectFit: "cover", borderRadius: "6px", cursor: "pointer", backgroundColor: "#000" }}
                   />
@@ -430,8 +439,8 @@ function AdminDashboard() {
         </div>
       )}
 
-      {lightboxImage && (
-        <ImageLightbox post={lightboxImage} onRequestClose={closeTopOverlay} />
+      {lightboxPost && (
+        <ImageLightbox post={lightboxPost} onRequestClose={closeTopOverlay} />
       )}
     </div>
   );

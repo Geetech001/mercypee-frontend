@@ -1,5 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 
+function getVideoPoster(videoUrl) {
+  if (!videoUrl) return undefined;
+  const lastDot = videoUrl.lastIndexOf(".");
+  if (lastDot === -1) return videoUrl;
+  return videoUrl.substring(0, lastDot) + ".jpg";
+}
+
 function ImageLightbox({ post, onRequestClose }) {
   const [zoomed, setZoomed] = useState(false);
   const touchStartY = useRef(null);
@@ -41,8 +48,10 @@ function ImageLightbox({ post, onRequestClose }) {
       {isVideo ? (
         <video
           src={post.videoUrl}
+          poster={getVideoPoster(post.videoUrl)}
           controls
           autoPlay
+          playsInline
           style={{ maxWidth: "95%", maxHeight: "90%" }}
         />
       ) : (

@@ -7,8 +7,16 @@ import ForgotPassword from "./ForgotPassword";
 import ResetPassword from "./ResetPassword";
 import ImageLightbox from "./ImageLightbox";
 
+function getVideoPoster(videoUrl) {
+  if (!videoUrl) return undefined;
+  const lastDot = videoUrl.lastIndexOf(".");
+  if (lastDot === -1) return videoUrl;
+  return videoUrl.substring(0, lastDot) + ".jpg";
+}
+
 function PublicSite() {
   const [posts, setPosts] = useState([]);
+  const [postsLoaded, setPostsLoaded] = useState(false);
   const [profile, setProfile] = useState({ bio: "", photoUrl: "" });
   const [lightboxPost, setLightboxPost] = useState(null);
   const [heroIndex, setHeroIndex] = useState(0);
@@ -16,15 +24,6 @@ function PublicSite() {
   const specialties = [
     "Corsets", "Masterpiece Dresses", "Corporate Wears", "Aso-Ebi Styles",
     "Church Outfits", "Bridal & Occasion Wears", "Custom Dresses", "Alterations & Perfect Fittings"
-  ];
-
-  const fallbackGallery = [
-    { imageUrl: "https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=600&h=800&fit=crop", mediaType: "image", caption: "", category: "" },
-    { imageUrl: "https://images.unsplash.com/photo-1445205170230-053b83016050?w=600&h=800&fit=crop", mediaType: "image", caption: "", category: "" },
-    { imageUrl: "https://images.unsplash.com/photo-1515372039744-b8f02a3ae446?w=600&h=800&fit=crop", mediaType: "image", caption: "", category: "" },
-    { imageUrl: "https://images.unsplash.com/photo-1509631179647-0177331693ae?w=600&h=800&fit=crop", mediaType: "image", caption: "", category: "" },
-    { imageUrl: "https://images.unsplash.com/photo-1483985988355-763728e1935b?w=600&h=800&fit=crop", mediaType: "image", caption: "", category: "" },
-    { imageUrl: "https://images.unsplash.com/photo-1490114538077-0a7f8cb49891?w=600&h=800&fit=crop", mediaType: "image", caption: "", category: "" }
   ];
 
   const colors = {
@@ -38,7 +37,9 @@ function PublicSite() {
   const API = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
-    axios.get(`${API}/api/posts`).then((res) => setPosts(res.data)).catch(() => {});
+    axios.get(`${API}/api/posts`)
+      .then((res) => { setPosts(res.data); setPostsLoaded(true); })
+      .catch(() => setPostsLoaded(true));
     axios.get(`${API}/api/profile`).then((res) => setProfile(res.data)).catch(() => {});
   }, [API]);
 
@@ -48,21 +49,20 @@ function PublicSite() {
     return () => window.removeEventListener("popstate", handlePopState);
   }, []);
 
-  const galleryToShow = posts.length > 0 ? posts : fallbackGallery;
-  const currentHero = galleryToShow[heroIndex % galleryToShow.length];
+  const currentHero = posts.length > 0 ? posts[heroIndex % posts.length] : null;
   const currentIsVideo = currentHero?.mediaType === "video";
 
   useEffect(() => {
-    if (galleryToShow.length <= 1) return;
+    if (posts.length <= 1) return;
     if (currentIsVideo) return;
     const timer = setTimeout(() => {
-      setHeroIndex((prev) => (prev + 1) % galleryToShow.length);
+      setHeroIndex((prev) => (prev + 1) % posts.length);
     }, 5000);
     return () => clearTimeout(timer);
-  }, [heroIndex, galleryToShow.length, currentIsVideo]);
+  }, [heroIndex, posts.length, currentIsVideo]);
 
   const handleHeroVideoEnded = () => {
-    setHeroIndex((prev) => (prev + 1) % galleryToShow.length);
+    setHeroIndex((prev) => (prev + 1) % posts.length);
   };
 
   const openLightbox = (post) => {
@@ -75,33 +75,38 @@ function PublicSite() {
   return (
     <div style={{ fontFamily: "Georgia, serif", backgroundColor: colors.bg, color: colors.text, overflowX: "hidden" }}>
 
+      {/* HERO */}
       <section style={{
         minHeight: "100vh",
         position: "relative",
         display: "flex", flexDirection: "column",
         alignItems: "center", justifyContent: "center", textAlign: "center", padding: "20px",
-        overflow: "hidden"
+        overflow: "hidden",
+        backgroundColor: colors.dark
       }}>
-        {currentIsVideo ? (
-          <video
-            key={currentHero.videoUrl}
-            src={currentHero.videoUrl}
-            autoPlay
-            muted
-            playsInline
-            onEnded={handleHeroVideoEnded}
-            style={{
+        {currentHero && (
+          currentIsVideo ? (
+            <video
+              key={currentHero.videoUrl}
+              src={currentHero.videoUrl}
+              poster={getVideoPoster(currentHero.videoUrl)}
+              autoPlay
+              muted
+              playsInline
+              onEnded={handleHeroVideoEnded}
+              style={{
+                position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
+                objectFit: "cover", zIndex: 0
+              }}
+            />
+          ) : (
+            <div style={{
               position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
-              objectFit: "cover", zIndex: 0
-            }}
-          />
-        ) : (
-          <div style={{
-            position: "absolute", top: 0, left: 0, width: "100%", height: "100%",
-            backgroundImage: `url(${currentHero?.imageUrl})`,
-            backgroundSize: "cover", backgroundPosition: "center",
-            zIndex: 0
-          }} />
+              backgroundImage: `url(${currentHero.imageUrl})`,
+              backgroundSize: "cover", backgroundPosition: "center",
+              zIndex: 0
+            }} />
+          )
         )}
 
         <div style={{
@@ -116,6 +121,7 @@ function PublicSite() {
         </div>
       </section>
 
+      {/* ABOUT */}
       <section style={{ padding: "70px 20px", textAlign: "center", backgroundColor: colors.sectionBg }}>
         <h2 style={{ fontSize: "1.9rem", marginBottom: "25px", color: colors.text, letterSpacing: "1px" }}>Our Story</h2>
 
@@ -137,6 +143,7 @@ function PublicSite() {
         </p>
       </section>
 
+      {/* SPECIALTIES */}
       <section style={{ padding: "70px 20px" }}>
         <h2 style={{ fontSize: "1.9rem", textAlign: "center", marginBottom: "45px", color: colors.text, letterSpacing: "1px" }}>Our Specialties</h2>
         <div style={{
@@ -156,72 +163,84 @@ function PublicSite() {
         </div>
       </section>
 
+      {/* GALLERY */}
       <section style={{ padding: "70px 20px", backgroundColor: colors.sectionBg }}>
         <h2 style={{ fontSize: "1.9rem", textAlign: "center", marginBottom: "45px", color: colors.text, letterSpacing: "1px" }}>Lookbook</h2>
-        <div style={{
-          display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "22px", maxWidth: "1000px", margin: "0 auto"
-        }}>
-          {galleryToShow.map((post, i) => (
-            <div key={i} style={{
-              backgroundColor: "#fff", borderRadius: "12px", overflow: "hidden",
-              boxShadow: "0 4px 14px rgba(59,42,30,0.12)", position: "relative"
-            }}>
-              {post.mediaType === "video" ? (
-                <div style={{ position: "relative" }} onClick={() => openLightbox(post)}>
-                  <video
-                    src={post.videoUrl}
-                    muted
-                    preload="metadata"
-                    style={{ width: "100%", height: "300px", objectFit: "cover", cursor: "pointer", display: "block", backgroundColor: "#000" }}
-                  />
-                  <div style={{
-                    position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
-                    display: "flex", alignItems: "center", justifyContent: "center",
-                    pointerEvents: "none"
-                  }}>
+
+        {!postsLoaded ? (
+          <p style={{ textAlign: "center", color: colors.text, opacity: 0.6 }}>Loading...</p>
+        ) : posts.length === 0 ? (
+          <p style={{ textAlign: "center", color: colors.text, opacity: 0.7, fontStyle: "italic" }}>
+            New looks coming soon — check back shortly.
+          </p>
+        ) : (
+          <div style={{
+            display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: "22px", maxWidth: "1000px", margin: "0 auto"
+          }}>
+            {posts.map((post, i) => (
+              <div key={i} style={{
+                backgroundColor: "#fff", borderRadius: "12px", overflow: "hidden",
+                boxShadow: "0 4px 14px rgba(59,42,30,0.12)", position: "relative"
+              }}>
+                {post.mediaType === "video" ? (
+                  <div style={{ position: "relative" }} onClick={() => openLightbox(post)}>
+                    <video
+                      src={post.videoUrl}
+                      poster={getVideoPoster(post.videoUrl)}
+                      muted
+                      preload="metadata"
+                      style={{ width: "100%", height: "300px", objectFit: "cover", cursor: "pointer", display: "block", backgroundColor: "#000" }}
+                    />
                     <div style={{
-                      width: "56px", height: "56px", borderRadius: "50%",
-                      backgroundColor: "rgba(0,0,0,0.5)",
-                      display: "flex", alignItems: "center", justifyContent: "center"
+                      position: "absolute", top: 0, left: 0, right: 0, bottom: 0,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      pointerEvents: "none"
                     }}>
                       <div style={{
-                        width: 0, height: 0,
-                        borderTop: "10px solid transparent",
-                        borderBottom: "10px solid transparent",
-                        borderLeft: "16px solid #fff",
-                        marginLeft: "4px"
-                      }} />
+                        width: "56px", height: "56px", borderRadius: "50%",
+                        backgroundColor: "rgba(0,0,0,0.5)",
+                        display: "flex", alignItems: "center", justifyContent: "center"
+                      }}>
+                        <div style={{
+                          width: 0, height: 0,
+                          borderTop: "10px solid transparent",
+                          borderBottom: "10px solid transparent",
+                          borderLeft: "16px solid #fff",
+                          marginLeft: "4px"
+                        }} />
+                      </div>
                     </div>
                   </div>
-                </div>
-              ) : (
-                <img
-                  src={post.imageUrl}
-                  alt={post.caption || "fashion look"}
-                  onClick={() => openLightbox(post)}
-                  style={{ width: "100%", height: "300px", objectFit: "cover", cursor: "pointer", display: "block" }}
-                />
-              )}
-              {(post.caption || post.category) && (
-                <div style={{ padding: "14px" }}>
-                  {post.caption && <p style={{ margin: 0, fontSize: "0.95rem", color: colors.text }}>{post.caption}</p>}
-                  {post.category && (
-                    <span style={{
-                      display: "inline-block", marginTop: "8px", fontSize: "0.75rem",
-                      color: colors.accent, border: `1px solid ${colors.accent}`,
-                      borderRadius: "20px", padding: "3px 12px", letterSpacing: "0.5px"
-                    }}>
-                      {post.category}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+                ) : (
+                  <img
+                    src={post.imageUrl}
+                    alt={post.caption || "fashion look"}
+                    onClick={() => openLightbox(post)}
+                    style={{ width: "100%", height: "300px", objectFit: "cover", cursor: "pointer", display: "block" }}
+                  />
+                )}
+                {(post.caption || post.category) && (
+                  <div style={{ padding: "14px" }}>
+                    {post.caption && <p style={{ margin: 0, fontSize: "0.95rem", color: colors.text }}>{post.caption}</p>}
+                    {post.category && (
+                      <span style={{
+                        display: "inline-block", marginTop: "8px", fontSize: "0.75rem",
+                        color: colors.accent, border: `1px solid ${colors.accent}`,
+                        borderRadius: "20px", padding: "3px 12px", letterSpacing: "0.5px"
+                      }}>
+                        {post.category}
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </section>
 
+      {/* CONTACT */}
       <section style={{ padding: "70px 20px", textAlign: "center" }}>
         <h2 style={{ fontSize: "1.9rem", marginBottom: "35px", color: colors.text, letterSpacing: "1px" }}>Let's Bring Your Vision to Life</h2>
 
